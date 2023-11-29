@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+      integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+      crossorigin="anonymous"
+    />
+  </head>
+    <body>
+      <div class="container" style="margin-top: 50px">
+        <h1>Employees</h1>
+        <label for="userName" >Full Name:<span id="userName"></span></label>
+        <button type="button" onclick="logout();  location.href = `../loginPage.html`">Log Out</button>
+
+
+        <h2>Actions Log</h2>
+        <table class="table" id="actionLogTable">
+            <thead>
+                <tr>
+                    <th>Name</th>`
+                    <th>Email</th>
+                    <th>Max Actions</th>
+                    <th>Allowed Actions</th>
+                    <th>Date Of Action</th>
+                    <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="tBody">
+                <!-- Shift data will be added here -->
+              </tbody>
+       
+        </table>
+        <br /> 
+        <div>
+          <button onclick="location.href=`./employeesPage.html`" >Employees Page</button>
+      </div>
+      <br />
+      <div>
+          <button onclick="location.href=`./departmentPage.html`" >Department Page</button>
+      </div>
+      <br />
+      <div>
+          <button onclick="location.href=`./shiftsPage.html`" >Shifts Page</button>
+      </div>
+      </div>
+       
+      <script>
+        const urlAct = 'http://localhost:8000/actions';
+
+
+    const getUserName = () => {
+    const userData = JSON.parse(sessionStorage.getItem('userData'));
+    if (userData) {
+      return userData.name;
+    } else {
+      return 'Guest'; 
+    }
+  }
+
+  const logout = () => {
+            sessionStorage.removeItem('userData');
+               
+        }
+
+        const userNameElement = document.getElementById('userName');
+        userNameElement.textContent = getUserName();
+    
+        const getActionLogData = async () => {
+            
+            const resp = await fetch(urlAct);
+            const  actions  = await resp.json();
+            
+            console.log(actions)
+            const tBody = document.getElementById('tBody');
+            tBody.innerHTML = '';
+    
+            actions.forEach((action) => {
+               
+                    // Create a table row
+                    const tr = document.createElement('tr');
+                    tr.classList.add('table');
+    
+                    // name column
+                    const tdName = document.createElement('td');
+                    tdName.appendChild(document.createTextNode(action.name));
+                    tr.appendChild(tdName);
+
+                    const tdEmail = document.createElement('td');
+                    tdEmail.appendChild(document.createTextNode(action.email));
+                    tr.appendChild(tdEmail);
+
+                    const tdMaxActions = document.createElement('td');
+                    tdMaxActions.appendChild(document.createTextNode(action.maxActions));
+                    tr.appendChild(tdMaxActions);
+
+                    const tdAllowedActions = document.createElement('td');
+                    tdAllowedActions.appendChild(document.createTextNode(action.actionAllowed));
+                    tr.appendChild(tdAllowedActions);
+
+                    const tdDate = document.createElement('td');
+                    tdDate.appendChild(document.createTextNode(action.date));
+                    tr.appendChild(tdDate);
+
+                    const tdStatus = document.createElement('td');
+                    tdStatus.appendChild(document.createTextNode(action.status));
+                    tr.appendChild(tdStatus);
+
+                    // Append the row to the table body
+                    tBody.appendChild(tr);
+                
+            });
+        }
+    
+      
+        window.onload = async () => {
+            await getActionLogData();
+        };
+    </script>
+
+        </script>
+    </body>
+</html>
+
+

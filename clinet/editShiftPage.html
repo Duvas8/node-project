@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <link
+          rel="stylesheet"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+          integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+          crossorigin="anonymous"
+        />
+        <script type = "text/javascript" src="userAction.js"></script>  
+      </head>
+<body>
+    <div class="container" style="margin-top: 50px">
+        <label for="userName" >Full Name:<span id="userName"></span></label>
+        <button type="button" onclick="logout();  location.href = `../loginPage.html`">Log Out</button>
+        <br/>
+        <h1>Edit Shift</h1>
+        <br />
+        <form id="editForm">
+            <div class="form-group">
+                <label for="shiftDate">Shift Date:</label>
+                <input
+                  type="date"
+                  class="form-control"
+                  id="shiftDate"
+                  aria-describedby="emailHelp"
+                  placeholder="Shift Date:"
+                />
+              </div>
+            <div class="form-group">
+                <label for="startingTime">Starting Time:</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="startingTime"
+                  aria-describedby="emailHelp"
+                  placeholder="Starting Time:"
+                />
+              </div>
+              <div class="form-group">
+                <label for="endingTime">Ending Time:</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="endingTime"
+                  aria-describedby="emailHelp"
+                  placeholder="Ending Time:"
+                />
+              </div>
+    
+            <!-- <label for="employeeId">Employee ID</label>
+            <input type="text" id="employeeId" startingTime="employeeId" disabled value=""> -->
+    
+           
+                <div>
+                    <button type="button"  onclick="updateShift()"> Save Changes</button>
+                </div>
+                <br />
+        </form>
+
+        <div class="form-group">
+            <label for="employeeSelect">Allocate Employees To Shift</label>
+            <select class="form-control" id="employeeSelect">
+                <!-- Populate department options dynamically using JavaScript -->
+            </select>
+            <div>
+                <button type="button"  onclick="allocateEmpToShift()">Allocate Employees</button>
+            </div>
+        </div>
+        <br />
+        
+        <div>
+            <button type="button" onclick="deleteDepartment()">Delete Department</button>
+        </div>
+        <br />
+      
+        <div>
+            <button onclick="location.href=`./departmentPage.html`" >Departments Page</button>
+          </div> 
+          <br />
+    </div>
+    
+
+    <script >
+        const url = 'http://localhost:8000/shifts';
+        const urlEmp = 'http://localhost:8000/test';
+
+    const getUserName = () => {
+    const userData = JSON.parse(sessionStorage.getItem('userData'));
+    if (userData) {
+      return userData.name;
+    } else {
+      return 'Guest'; 
+    }
+  };
+
+  const logout = () => {
+            sessionStorage.removeItem('userData');  
+        };
+
+        const userNameElement = document.getElementById('userName');
+        userNameElement.textContent = getUserName();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const shiftObjId = urlParams.get('id');
+        console.log(shiftObjId)
+        
+
+    const getShiftDataById = async (shiftObjId) => {
+        try {
+        const resp = await fetch(url);
+        const shifts = await resp.json();
+        const filterdShift = shifts.find((shif) => shif.id === shiftObjId)
+        console.log(filterdShift)
+
+        document.getElementById("shiftDate").value = filterdShift.shiftDate
+        document.getElementById("startingTime").value = filterdShift.startingTime
+        document.getElementById("endingTime").value = filterdShift.endingTime
+        
+          
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+
+    const updateShift = async () => {
+     
+    try {
+    userAction("Shift Update")
+    // Get input values
+    const shiftDate = document.getElementById('shiftDate').value;
+    const startingTime = document.getElementById('startingTime').value;
+    const endingTime = document.getElementById('endingTime').value;
+   
+    // Create the data object
+    const obj = {
+        shiftDate:shiftDate,
+        startingTime: startingTime,
+        endingTime: endingTime
+    };
+    // Send put request
+    const resp = await fetch(`${url}/${shiftObjId}`, {
+        method: 'put',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(obj),
+    });
+        const data = await resp.json();
+        console.log(data);
+        
+        } catch (error) {
+        console.error(error);
+        // Handle errors here, such as displaying an error message to the user
+        }
+    };
+
+    const allocateEmpToShift = async() => {
+    try {
+        
+    // Get input values
+    const employeeSelect = document.getElementById('employeeSelect');
+    const employeeId = employeeSelect.value.toString();
+    const employeeData = await fetch(`${urlEmp}/${employeeId}`);
+        const emp = await employeeData.json();
+        const workingShifts = emp.workingShifts;
+        console.log(workingShifts)
+    const checkShiftId = workingShifts.find(shift => shift.shiftId === shiftObjId)
+    
+    if(!checkShiftId){
+        userAction("allocate Employee To Shift")
+        // Create the data object
+        const obj = {
+        workingShifts: [...workingShifts,{shiftId:shiftObjId}],
+        };
+
+    // Send PATCH request
+    const resp = await fetch(`${urlEmp}/${employeeId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(obj),
+    });
+        const data = await resp.json();
+        console.log(data);
+        
+    } else {
+        console.log('Employee Allrady working')
+    }
+        } catch (error) {
+        console.error(error);
+        // Handle errors here, such as displaying an error message to the user
+        }
+    }
+
+    const getFilteredEmployeesData = async (shiftId) => {
+    const resp = await fetch(urlEmp);
+    const employees = await resp.json();
+    const filteredEmployees = employees.filter(emp => emp.workingShifts.shiftId !== shiftId);
+    return filteredEmployees;
+};
+
+    const populateEmployeesDropdown = async (shiftId) => {
+    const filterdEmployees = await getFilteredEmployeesData(shiftId);
+    const employeeSelect = document.getElementById('employeeSelect');
+
+    filterdEmployees.forEach(employee => {
+        const option = document.createElement('option');
+        option.value = employee.id; // Use department ID as the value
+        const fullName = `${employee.firstName} ${employee.lastName}`
+        option.textContent = fullName; // Display department startingTime
+        employeeSelect.appendChild(option);
+    });
+    console.log("popelet")
+    };
+
+   
+
+const getAllAction = async () => {
+        const resp = await fetch(urlAct);
+        const actions = await resp.json();
+        return actions;
+    };
+
+
+ 
+    window.onload = async() => {
+        await getShiftDataById(shiftObjId);
+        await populateEmployeesDropdown(shiftObjId)
+
+      };
+    </script>
+</body>
+</html> 

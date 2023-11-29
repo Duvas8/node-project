@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <link
+          rel="stylesheet"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+          integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+          crossorigin="anonymous"
+        />
+        <script type = "text/javascript" src="userAction.js"></script>  
+      </head>
+<body>
+    <div class="container" style="margin-top: 50px">
+        <label for="userName" >Full Name:<span id="userName"></span></label>
+        <button type="button" onclick="logout();  location.href = `../loginPage.html`">Log Out</button>
+        <br/>
+        <h1>Edit Department</h1>
+        <br />
+        <form id="editForm">
+            <div class="form-group">
+                <label for="Name">Department Name:</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="Name"
+                  aria-describedby="emailHelp"
+                  placeholder="Department Name:"
+                />
+              </div>
+              <div class="form-group">
+                <label for="managerName">Manager Name:</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="managerName"
+                  aria-describedby="emailHelp"
+                  placeholder="Manager Name:"
+                />
+              </div>
+              <div class="form-group">
+                <label for="managerId">Manager ID:</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="managerId"
+                  aria-describedby="emailHelp"
+                  placeholder="Manager ID:"
+                />
+              </div>
+    
+            <!-- <label for="employeeId">Employee ID</label>
+            <input type="text" id="employeeId" name="employeeId" disabled value=""> -->
+    
+           
+                <div>
+                    <button type="button"  onclick="updateDepartment()"> Save Changes</button>
+                </div>
+                <br />
+        </form>
+
+        <div class="form-group">
+            <label for="employeeSelect">Employees not in Department</label>
+            <select class="form-control" id="employeeSelect">
+                <!-- Populate department options dynamically using JavaScript -->
+            </select>
+            <div>
+                <button type="button"  onclick="addEmpToDepartment()">Add Employee</button>
+            </div>
+        </div>
+        <br />
+        
+        <div>
+            <button type="button" onclick="deleteDepartment()">Delete Department</button>
+        </div>
+        <br />
+      
+        <div>
+            <button onclick="location.href=`./departmentPage.html`" >Departments Page</button>
+          </div> 
+          <br />
+    </div>
+    
+
+    <script >
+        const url = 'http://localhost:8000/departments';
+        const urlEmp = 'http://localhost:8000/test';
+
+        const getUserName = () => {
+    const userData = JSON.parse(sessionStorage.getItem('userData'));
+    if (userData) {
+      return userData.name;
+    } else {
+      return 'Guest'; 
+    }
+  };
+
+  const logout = () => {
+            sessionStorage.removeItem('userData');  
+        };
+
+        const userNameElement = document.getElementById('userName');
+        userNameElement.textContent = getUserName();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const departmentObjId = urlParams.get('id');
+        console.log(departmentObjId)
+        
+
+    const getDepartmentDataById = async (departmentObjId) => {
+        try {
+        const resp = await fetch(url);
+        const departments = await resp.json();
+        const filterdDepartment = departments.find((dep) => dep.id === departmentObjId)
+        console.log(filterdDepartment)
+       
+        document.getElementById("Name").value = filterdDepartment.name
+        document.getElementById("managerName").value = filterdDepartment.managerName
+        document.getElementById("managerId").value = filterdDepartment.managerId
+        
+        
+            
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+
+    const updateDepartment = async () => {
+     
+    try {
+    // Get input values
+    const name = document.getElementById('Name').value;
+    const managerName = document.getElementById('managerName').value;
+    const managerId = document.getElementById('managerId').value;
+   
+    // Create the data object
+    const obj = {
+        name: name,
+        managerName: managerName,
+        managerId: managerId
+    };
+
+    // Send POST request
+    const resp = await fetch(`${url}/${departmentObjId}`, {
+        method: 'put',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(obj),
+    });
+        const data = await resp.json();
+        console.log(data);
+        userAction("Department Update")
+        } catch (error) {
+        console.error(error);
+        // Handle errors here, such as displaying an error message to the user
+        }
+    };
+
+
+
+    const addEmpToDepartment = async() => {
+    try {
+    // Get input values
+    const employeeSelect = document.getElementById('employeeSelect');
+    const employeeId = employeeSelect.value.toString();
+    
+    // Create the data object
+    const obj = {
+            departmentId: departmentObjId,
+        };
+
+    // Send PATCH request
+    const resp = await fetch(`${urlEmp}/${employeeId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(obj),
+    });
+        const data = await resp.json();
+        console.log(data);
+        userAction("Add Employee To Department Update")
+        } catch (error) {
+        console.error(error);
+        // Handle errors here, such as displaying an error message to the user
+        }
+    }
+
+    const getFilteredEmployeesData = async (departmentId) => {
+    const resp = await fetch(urlEmp);
+    const employees = await resp.json();
+    const filteredEmployees = employees.filter(emp => emp.departmentId !== departmentId);
+    return filteredEmployees;
+};
+
+    const populateEmployeesDropdown = async (departmentId) => {
+    const filterdEmployees = await getFilteredEmployeesData(departmentId);
+    const employeeSelect = document.getElementById('employeeSelect');
+
+    filterdEmployees.forEach(employee => {
+        const option = document.createElement('option');
+        option.value = employee.id; // Use department ID as the value
+        const fullName = `${employee.firstName} ${employee.lastName}`
+        option.textContent = fullName; // Display department name
+        employeeSelect.appendChild(option);
+    });
+    console.log("popelet")
+    };
+
+
+    const deleteDepartment = async () => {
+    try {
+        // Now, delete the department
+        const resp = await fetch(`${url}/${departmentObjId}`, {
+            method: 'delete',
+        });
+        const data = await resp.json();
+         console.log(data);
+         userAction("Department Delete")
+         location.href=`./departmentPage.html`
+    } catch (error) {
+        console.error(error);
+        // Handle errors here, such as displaying an error message to the user
+    }
+};
+const getAllAction = async () => {
+        const resp = await fetch(urlAct);
+        const actions = await resp.json();
+        return actions;
+    };
+
+
+   
+
+    window.onload = async() => {
+        await getDepartmentDataById(departmentObjId);
+        await populateEmployeesDropdown(departmentObjId)
+
+      };
+    </script>
+</body>
+</html> 
+
+
+
+
+
+
