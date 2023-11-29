@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+      integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+      crossorigin="anonymous"
+    />
+  </head>
+  <body style="margin: 50px;">
+    <label for="userName" >Full Name:<span id="userName"></span></label>
+    <button type="button" onclick="logout();  location.href = `../loginPage.html`">Log Out</button>
+    <br/>
+    <h1>Shifts</h1>
+    <br/>
+    <br/>
+    <br/>
+    <h3>Shifts Data</h3>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Shift Date</th>
+          <th>Starting Time</th>
+          <th>Ending Time</th>
+          <th>Allocated Employees</th>
+
+          </tr>
+      </thead>
+      <tbody id="tBody">
+        <!-- Shift data will be added here -->
+      </tbody>
+    </table>
+    <br />
+    <div>
+      <button onclick="location.href=`./addShiftPage.html`" >Add Shift</button>
+    </div>
+    <br />
+    <div>
+        <button onclick="location.href=`./employeesPage.html`" >Employees Page</button>
+    </div>
+
+    
+    <script type="module" >
+     const url = 'http://localhost:8000/shifts';
+     
+     const getUserName = () => {
+    const userData = JSON.parse(sessionStorage.getItem('userData'));
+    if (userData) {
+      return userData.name;
+    } else {
+      return 'Guest'; 
+    }
+  };
+
+  const logout = () => {
+            sessionStorage.removeItem('userData');  
+        };
+        
+        const userNameElement = document.getElementById('userName');
+        userNameElement.textContent = getUserName();
+    
+    const getAllShiftsData = async() => {
+        const resp = await fetch(url);
+        const shifts = await resp.json();
+        console.log(shifts)
+
+      const tBody = document.getElementById('tBody');
+
+      shifts.forEach((shift) => {
+        // Create a table row
+        const tr = document.createElement('tr');
+        tr.classList.add('table');
+
+        const tdShiftDate = document.createElement('td');
+        tdShiftDate.textContent= shift.shiftDate
+        tr.appendChild(tdShiftDate);
+        // Starting Time column
+        const tdStartingTime = document.createElement('td');
+        tdStartingTime.textContent = shift.startingTime;
+        tr.appendChild(tdStartingTime);
+
+        // Ending Time column
+        const tdEndingTime = document.createElement('td');
+        tdEndingTime.textContent = shift.endingTime;
+        tr.appendChild(tdEndingTime);
+
+        // Allocated Employees column
+        const tdAllocatedEmployees = document.createElement('td');
+        const ulAllocatedEmployees = document.createElement('ul');
+
+        shift.employeeAllocated.forEach((employee) => {
+          const liEmployee = document.createElement('li');
+          liEmployee.textContent = `${employee.firstName} ${employee.lastName}`;
+          ulAllocatedEmployees.appendChild(liEmployee);
+        });
+
+        tdAllocatedEmployees.appendChild(ulAllocatedEmployees);
+        tr.appendChild(tdAllocatedEmployees);
+
+        // Edit Shift Button
+          const editBtn = document.createElement('button');
+          editBtn.type = 'button';
+          const editPageLink = document.createElement('a');
+          editPageLink.href = `./editShiftPage.html?id=${shift.id}`;
+          editPageLink.textContent = 'Edit Shift';
+          editBtn.appendChild(editPageLink)
+          tr.appendChild(editBtn);
+        
+
+        
+
+        // Append the row to the table body
+        tBody.appendChild(tr);
+      });
+    }
+
+
+      window.onload = async() => {
+        await getAllShiftsData();
+      };
+
+    </script>
+  </body>
+</html>
