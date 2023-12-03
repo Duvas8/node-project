@@ -139,7 +139,7 @@ const getAllAction = async () => {
     const lastAction = actions.findLast( (action) => action.id === user.id);
     console.log('Last Action:', lastAction);
     //Check if the user was login ever 
-    const lastActionDate = new Date()
+    let lastActionDate = new Date()
     if(lastAction ) {
       const lastActionDate = new Date(lastAction.date);
     }
